@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -371,12 +372,52 @@ Logout
 <div id="employeesSection" class="card hidden">
 
 <h2>Add Employee</h2>
-
+<input type="text" id="employeeNo" placeholder="Employee No." readonly>
 <input type="text" id="fullname" placeholder="Full Name">
 
 <input type="text" id="position" placeholder="Position">
 
-<input type="text" id="office" placeholder="Office">
+<select id="office">
+
+<option value="">Select Office</option>
+
+<optgroup label="Regional Office">
+
+<option value="Office of the Regional Director">
+Office of the Regional Director
+</option>
+
+<option value="Finance Administrative Support Services">
+Finance Administrative Support Services
+</option>
+
+<option value="Technical Operation Services">
+Technical Operation Services
+</option>
+
+<option value="Regional Metrology Laboratory">
+Regional Metrology Laboratory
+</option>
+
+<option value="Regional Standards and Testing Laboratory">
+Regional Standards and Testing Laboratory
+</option>
+
+</optgroup>
+
+<optgroup label="Provincial Science and Technology Offices">
+
+<option value="PSTO Batanes">PSTO Batanes</option>
+<option value="PSTO Cagayan">PSTO Cagayan</option>
+<option value="PSTO Isabela">PSTO Isabela</option>
+<option value="PSTO Quirino">PSTO Quirino</option>
+<option value="PSTO Nueva Vizcaya">PSTO Nueva Vizcaya</option>
+
+</optgroup>
+
+</select>
+
+
 
 <select id="supervisor">
 
@@ -384,7 +425,17 @@ Logout
 Select Immediate Supervisor
 </option>
 
+<option value="VIRGINIA G. BILGERA">
+VIRGINIA G. BILGERA
+</option>
+
+<option value="MARY ANN P. MAGLASIN">
+MARY ANN P. MAGLASIN
+</option>
+
+
 </select>
+
 
 
 <input type="number" id="salary" placeholder="Salary">
@@ -417,16 +468,15 @@ Save Employee
 
 <thead>
 <tr>
-
+<th>Employee No.</th>
 <th>Name</th>
 <th>Position</th>
 <th>Office</th>
 <th>Supervisor</th>
-
 <th>Salary</th>
 <th>Tax Rate</th>
 <th>ATM Number</th>
-
+<th>Action</th>
 
 
 </tr>
@@ -754,7 +804,9 @@ addDoc,
 onSnapshot,
 doc,
 updateDoc,
+deleteDoc,
 arrayUnion
+
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -782,6 +834,9 @@ let hazards = [];
 let currentUser = JSON.parse(localStorage.getItem("currentUser"));
 let selectedHazardId = "";
 let selectedHazardIndex = "";
+
+/* EMPLOYEE EDIT MODE */
+let editingEmployeeId = null;
 /* LOGIN */
 
 
@@ -1592,34 +1647,52 @@ try{
 
 let employee = {
 
+employeeNo: document.getElementById("employeeNo").value,
+
 name: document.getElementById("fullname").value,
+
+
 position: document.getElementById("position").value,
 office: document.getElementById("office").value,
 supervisor: document.getElementById("supervisor").value,
-
 salary: document.getElementById("salary").value,
 taxRate: document.getElementById("taxRate").value,
 atmNumber: document.getElementById("atmNumber").value
 
-
-
-
 };
 
-await addDoc(collection(db,"employees"), employee);
+if(editingEmployeeId){
+
+await updateDoc(
+doc(db,"employees",editingEmployeeId),
+employee
+);
+
+alert("Employee Updated!");
+
+editingEmployeeId = null;
+
+document.querySelector(".saveBtn").innerText =
+"Save Employee";
+
+}else{
+
+await addDoc(
+collection(db,"employees"),
+employee
+);
 
 alert("Employee Saved!");
+
+}
 
 document.getElementById("fullname").value = "";
 document.getElementById("position").value = "";
 document.getElementById("office").value = "";
 document.getElementById("supervisor").selectedIndex = 0;
-
 document.getElementById("salary").value = "";
 document.getElementById("taxRate").selectedIndex = 0;
 document.getElementById("atmNumber").value = "";
-
-
 
 }catch(error){
 
@@ -1629,6 +1702,57 @@ alert(error.message);
 }
 
 }
+
+window.deleteEmployee = async function(id){
+
+let employee = employees.find(
+e => e.id === id
+);
+
+let confirmDelete = confirm(
+
+`Are you sure you want to delete:
+
+${employee?.name || "this employee"} ?
+
+This action cannot be undone.`
+
+);
+
+if(!confirmDelete){
+    return;
+}
+
+try{
+
+await deleteDoc(
+doc(db,"employees",id)
+);
+
+alert("Employee successfully deleted.");
+
+}catch(error){
+
+console.error(error);
+
+alert(error.message);
+
+}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ACCOUNT */
 
@@ -1815,7 +1939,14 @@ alert(error.message);
 
 /* RENDER */
 
+
+
 function renderEmployees(){
+
+document.getElementById("employeeNo").value =
+String(employees.length + 1).padStart(3,"0");
+
+
 
 let html = "";
 
@@ -1823,6 +1954,7 @@ employees.forEach(emp=>{
 
 html += `
 <tr>
+<td>${emp.employeeNo || ""}</td>
 <td>${emp.name}</td>
 <td>${emp.position}</td>
 <td>${emp.office}</td>
@@ -1831,12 +1963,47 @@ html += `
 <td>${emp.taxRate || "0"}%</td>
 <td>${emp.atmNumber}</td>
 
+<td>
 
+<button
+onclick="editEmployee('${emp.id}')"
+style="
+background:#2563eb;
+color:white;
+border:none;
+padding:6px 10px;
+border-radius:5px;
+cursor:pointer;
+margin-right:5px;
+">
+Edit
+</button>
 
+<button
+onclick="deleteEmployee('${emp.id}')"
+style="
+background:#dc2626;
+color:white;
+border:none;
+padding:6px 10px;
+border-radius:5px;
+cursor:pointer;
+">
+Delete
+</button>
 
+</td>
 
 </tr>
 `;
+
+
+
+
+
+
+
+
 
 
 
@@ -2735,20 +2902,36 @@ dropdown.innerHTML = `
 <option value="">
 Select Immediate Supervisor
 </option>
+
+<option value="VIRGINIA G. BILGERA">
+VIRGINIA G. BILGERA
+</option>
+
+<option value="MARY ANN P. MAGLASIN">
+MARY ANN P. MAGLASIN
+</option>
+
+
+
 `;
 
 employees.forEach(emp=>{
 
-dropdown.innerHTML += `
-<option value="${emp.name}">
-${emp.name}
-</option>
-`;
+    // para hindi madoble kung sakaling may employee na
+    // talagang Virginia G. Bilgera sa database
+    if(emp.name !== "VIRGINIA G. BILGERA"){
+
+        dropdown.innerHTML += `
+        <option value="${emp.name}">
+        ${emp.name}
+        </option>
+        `;
+
+    }
 
 });
 
 }
-
 
 
 
@@ -2940,6 +3123,37 @@ function formatMonthRange(monthStr){
     let lastDay = new Date(year, month, 0).getDate();
 
     return `${monthName} 1-${lastDay}, ${year}`;
+}
+
+
+
+window.editEmployee = function(id){
+
+let employee = employees.find(e => e.id === id);
+
+if(!employee){
+    alert("Employee not found.");
+    return;
+}
+
+editingEmployeeId = id;
+
+document.getElementById("fullname").value = employee.name || "";
+document.getElementById("position").value = employee.position || "";
+document.getElementById("office").value = employee.office || "";
+document.getElementById("supervisor").value = employee.supervisor || "";
+document.getElementById("salary").value = employee.salary || "";
+document.getElementById("taxRate").value = employee.taxRate || "";
+document.getElementById("atmNumber").value = employee.atmNumber || "";
+
+document.querySelector(".saveBtn").innerText =
+"Update Employee";
+
+window.scrollTo({
+    top:0,
+    behavior:"smooth"
+});
+
 }
 
 
