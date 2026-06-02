@@ -433,6 +433,31 @@ VIRGINIA G. BILGERA
 MARY ANN P. MAGLASIN
 </option>
 
+<option value="MARY ANN D. CARPISO">
+MARY ANN D. CARPISO
+</option>
+
+<option value="JAYFERSON D. MABBORANG">
+JAYFERSON D. MABBORANG
+</option>
+
+
+<option value="NORA T. GARCIA">
+NORA T. GARCIA
+</option>
+
+<option value="ROSARIO G. DANGA">
+ROSARIO G. DANGA
+</option>
+
+<option value="ROCELA ANGELICA B. GOROSPE">
+ROCELA ANGELICA B. GOROSPE
+</option>
+
+<option value="JONATHAN R. NUESTRO">
+JONATHAN R. NUESTRO
+</option>
+
 
 </select>
 
@@ -1031,23 +1056,19 @@ formattedMonth =
 
 }
 
+let filtered = hazards
+.filter(h => h.month === month)
+.sort((a,b) => {
+
+let empA = employees.find(e => e.name === a.employee);
+let empB = employees.find(e => e.name === b.employee);
+
+return Number(empA?.employeeNo || 0) -
+       Number(empB?.employeeNo || 0);
+
+});
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-let filtered = hazards.filter(h => h.month === month);
 
 let rows = "";
 
@@ -1372,12 +1393,9 @@ font-weight:bold;
 <body>
 
 <div class="title">
-HAZARD PAYROLL
+PAYROLL (HAZARD ALLOWANCE)
 </div>
 
-
-
-<div class="topHeader">
 <div style="
 text-align:center;
 font-size:14px;
@@ -1388,7 +1406,6 @@ For the Period: ${formattedMonth}
 </div>
 
 
-</div>
 
 <div>
 <b>Entity Name: Department of Science and Technology Region II</b> 
@@ -1647,7 +1664,9 @@ try{
 
 let employee = {
 
-employeeNo: document.getElementById("employeeNo").value,
+employeeNo: editingEmployeeId
+? employees.find(e => e.id === editingEmployeeId)?.employeeNo
+: document.getElementById("employeeNo").value,
 
 name: document.getElementById("fullname").value,
 
@@ -1943,14 +1962,20 @@ alert(error.message);
 
 function renderEmployees(){
 
+if(!editingEmployeeId){
 document.getElementById("employeeNo").value =
 String(employees.length + 1).padStart(3,"0");
-
+}
 
 
 let html = "";
 
-employees.forEach(emp=>{
+[...employees]
+.sort((a,b)=>
+Number(a.employeeNo || 0) -
+Number(b.employeeNo || 0)
+)
+.forEach(emp=>{
 
 html += `
 <tr>
@@ -1999,14 +2024,6 @@ Delete
 
 
 
-
-
-
-
-
-
-
-
 });
 
 document.getElementById("employeesTable").innerHTML = html;
@@ -2043,7 +2060,17 @@ function renderRecords(){
 
 let html = "";
 
-hazards.forEach((h,index)=>{
+[...hazards]
+.sort((a,b)=>{
+
+let empA = employees.find(e => e.name === a.employee);
+let empB = employees.find(e => e.name === b.employee);
+
+return Number(empA?.employeeNo || 0) -
+       Number(empB?.employeeNo || 0);
+
+})
+.forEach((h,index)=>{
 
 html += `
 
@@ -2063,7 +2090,14 @@ html += `
 
 <td>${(h.duties || []).join("<br>")}</td>
 
+
+
+
+
+
 <td>
+
+<div style="display:flex; flex-direction:column; gap:5px;">
 
 <button
 onclick="printCertificate(
@@ -2085,7 +2119,72 @@ font-weight:bold;
 PRINT CERTIFICATE
 </button>
 
+
+
+<div style="font-size:12px;">
+
+${
+(h.duties && h.duties.length > 0)
+
+?
+
+`<div style="color:#16a34a;font-weight:bold;">
+✓ Already signed by the staff
+</div>`
+
+:
+
+`<div style="color:#dc2626;font-weight:bold;">
+⚠ Not yet signed by the staff
+</div>`
+}
+
+${
+h.approvalStatus === "APPROVED"
+
+?
+
+`<div style="color:#16a34a;font-weight:bold;">
+✓ Already Approved by the Supervisor
+</div>`
+
+:
+
+(h.duties && h.duties.length > 0)
+
+?
+
+`<div style="color:#f59e0b;font-weight:bold;">
+⚠ Waiting for Supervisor Approval
+</div>`
+
+:
+
+""
+}
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
 </td>
+
+
+
+
+
 
 </tr>
 
@@ -2147,7 +2246,17 @@ let month = document.getElementById("payrollMonth").value;
 
 let html = "";
 
-let filtered = hazards.filter(h => h.month === month);
+let filtered = hazards
+.filter(h => h.month === month)
+.sort((a,b) => {
+
+let empA = employees.find(e => e.name === a.employee);
+let empB = employees.find(e => e.name === b.employee);
+
+return Number(empA?.employeeNo || 0) -
+       Number(empB?.employeeNo || 0);
+
+});
 
 filtered.forEach((h,index)=>{
 
@@ -2799,6 +2908,7 @@ ${rate}
 
 is requested for the month abovementioned.
 
+
 </div>
 
 <div class="signatureRight">
@@ -2816,7 +2926,9 @@ Signature over Printed Name
 <br><br>
 
 
+<div style="position:relative; left:-60px;">
 Endorsed by:
+</div>
 
 <br><br>
 
@@ -2830,6 +2942,10 @@ Immediate Supervisor
 
 </div>
 
+
+
+
+
 <div class="signatureLeft">
 
 Recommending Approval:
@@ -2837,20 +2953,38 @@ Recommending Approval:
 <br><br><br>
 
 <span class="line">
-Chair, Agency Hazard Committee
+MARY ANN P. MAGLASIN
 </span>
 
-<br><br>
+<br>
+
+Chair, Agency Hazard Committee
+
+<br><br><br>
 
 Approval:
 
 <br><br><br>
 
 <span class="line">
-Head of Agency
+VIRGINIA G. BILGERA
 </span>
 
+<br>
+
+ Head of Agency | Regional Director
+
 </div>
+
+
+
+
+
+
+
+
+
+
 
 </body>
 
@@ -2911,6 +3045,47 @@ VIRGINIA G. BILGERA
 MARY ANN P. MAGLASIN
 </option>
 
+<option value="MARY ANN D. CARPISO">
+MARY ANN D. CARPISO
+</option>
+
+
+<option value="JAYFERSON D. MABBORANG">
+JAYFERSON D. MABBORANG
+</option>
+
+
+<option value="NORA T. GARCIA">
+NORA T. GARCIA
+</option>
+
+<option value="ROSARIO G. DANGA">
+ROSARIO G. DANGA
+</option>
+
+<option value="ROCELA ANGELICA B. GOROSPE">
+ROCELA ANGELICA B. GOROSPE
+</option>
+
+<option value="JONATHAN R. NUESTRO">
+JONATHAN R. NUESTRO
+</option>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 `;
@@ -2935,11 +3110,6 @@ employees.forEach(emp=>{
 
 
 
-
-
-
-
-
 function loadEmployeeDropdown(){
 
 let dropdown = document.getElementById("selectedEmployee");
@@ -2948,10 +3118,19 @@ dropdown.innerHTML = `
 <option value="">Select Employee</option>
 `;
 
-employees.forEach((emp,index)=>{
+[...employees]
+.sort((a,b)=>
+Number(a.employeeNo || 0) -
+Number(b.employeeNo || 0)
+)
+.forEach(emp=>{
+
+let originalIndex = employees.findIndex(
+e => e.id === emp.id
+);
 
 dropdown.innerHTML += `
-<option value="${index}">
+<option value="${originalIndex}">
 ${emp.name}
 </option>
 `;
@@ -2959,6 +3138,7 @@ ${emp.name}
 });
 
 }
+
 
 function loadHazardDropdown(){
 
@@ -2968,17 +3148,29 @@ dropdown.innerHTML = `
 <option value="">Select Employee</option>
 `;
 
-employees.forEach((emp,index)=>{
+[...employees]
+.sort((a,b)=>
+Number(a.employeeNo || 0) -
+Number(b.employeeNo || 0)
+)
+.forEach(emp=>{
+
+let originalIndex = employees.findIndex(
+e => e.id === emp.id
+);
 
 dropdown.innerHTML += `
-<option value="${index}">
+<option value="${originalIndex}">
 ${emp.name}
 </option>
+
 `;
 
 });
 
 }
+
+
 
 /* FIREBASE REALTIME */
 
@@ -3137,6 +3329,10 @@ if(!employee){
 }
 
 editingEmployeeId = id;
+
+document.getElementById("employeeNo").value =
+employee.employeeNo || "";
+
 
 document.getElementById("fullname").value = employee.name || "";
 document.getElementById("position").value = employee.position || "";
