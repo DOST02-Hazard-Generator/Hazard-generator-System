@@ -229,11 +229,6 @@ margin-bottom:20px;
 
 
 
-
-
-
-
-
 </style>
 </head>
 
@@ -786,11 +781,13 @@ Print Payroll
 
 <tr>
 
-<th>Employee</th>
+<th>Name</th>
 <th>Month</th>
 <th>Inclusive Dates</th>
 <th>Risk</th>
-<th>Rate</th>
+<th>Hazard Rate</th>
+<th>Actual Days</th>
+<th>Net Amount</th>
 <th>Duties</th>
 <th>Status</th>
 <th>Action</th>
@@ -814,10 +811,19 @@ Print Payroll
 
 <thead>
 <tr>
-<th>Employee</th>
+
+<th>Name</th>
 <th>Month</th>
+<th>Inclusive Dates</th>
+<th>Risk</th>
+<th>Hazard Rate</th>
+<th>Actual Days</th>
+<th>Net Amount</th>
+<th>Duties</th>
 <th>Status</th>
 <th>Action</th>
+
+
 </tr>
 </thead>
 
@@ -835,10 +841,18 @@ Print Payroll
 
 <thead>
 <tr>
-<th>Employee</th>
+<th>Name</th>
 <th>Month</th>
+<th>Inclusive Dates</th>
+<th>Risk</th>
+<th>Hazard Rate</th>
+<th>Actual Days</th>
+<th>Net Amount</th>
+<th>Duties</th>
 <th>Status</th>
 <th>Action</th>
+
+
 </tr>
 </thead>
 
@@ -2544,26 +2558,68 @@ let firstRow = true;
 
 (h.duties || []).forEach(d => {
 
+
+let salary = parseFloat(employeeInfo?.salary || 0);
+
+let ratePercent = parseFloat(h.rate);
+
+let percentBasicSalary =
+(salary * ratePercent) / 100;
+
+let actualDays =
+parseFloat(h.days || 0);
+
+let taxableHazardAllowance =
+percentBasicSalary * (actualDays / 22);
+
+let taxRate =
+parseFloat(employeeInfo?.taxRate || 0);
+
+let withholdingTax =
+(taxableHazardAllowance * taxRate) / 100;
+
+let netAmount =
+taxableHazardAllowance - withholdingTax;
+
+
+
+
 html += `
 <tr>
 
-<td>${h.employee}</td>
+<td>${firstRow ? h.employee : ""}</td>
 
-<td>${h.month}</td>
+<td>${firstRow ? h.month : ""}</td>
 
-<td>${firstRow ? h.inclusiveDates : ""}</td>
+<td>${firstRow ? (h.inclusiveDates || "") : ""}</td>
 
 <td>${firstRow ? h.risk : ""}</td>
 
 <td>${firstRow ? h.rate : ""}</td>
 
-<td>${d}</td>
-
-<td>${firstRow ? (h.approvalStatus || "PENDING") : ""}</td>
+<td>${firstRow ? actualDays : ""}</td>
 
 <td>
+${firstRow
+? netAmount.toLocaleString(undefined,{
+minimumFractionDigits:2
+})
+: ""}
+</td>
 
+<td>${d}</td>
+
+<td>
+${firstRow
+? (h.approvalStatus || "PENDING_SUPERVISOR")
+: ""}
+</td>
+
+<td>
 ${
+firstRow
+?
+(
 h.approvalStatus === "PENDING_SUPERVISOR"
 ?
 `
@@ -2607,12 +2663,18 @@ font-weight:bold;
 ✓ ALREADY FORWARDED
 </span>
 `
+)
+:
+""
 }
-
 </td>
 
 </tr>
 `;
+
+
+
+
 
 firstRow = false;
 
@@ -2931,7 +2993,35 @@ alert("Successfully forwarded to Chair Committee Approval.");
 
 window.printCertificate = function(employee, month, risk, rate, index){
 
+
+let h = hazards[index];
+
 let duties = hazards[index].duties || [];
+
+
+let emp = employees.find(e => e.name === employee);
+
+let salary = parseFloat(emp?.salary || 0);
+
+let ratePercent = parseFloat(rate);
+
+let hazardAmount = (salary * ratePercent) / 100;
+
+let actualDays = parseFloat(h.days || 0);
+
+let taxableHazardAllowance =
+hazardAmount * (actualDays / 22);
+
+let taxRate =
+parseFloat(emp?.taxRate || 0);
+
+let withholdingTax =
+(taxableHazardAllowance * taxRate) / 100;
+
+let netAmount =
+taxableHazardAllowance - withholdingTax;
+
+
 
 let employeeInfo = employees.find(e => e.name === employee);
 
@@ -2959,7 +3049,6 @@ let office = employeeInfo?.office || "";
 let position = employeeInfo?.position || "";
 
 
-let h = hazards[index];
 
 let supervisorSignature = "";
 
@@ -3018,7 +3107,13 @@ ${d}
 
 
 
-
+let qrData = JSON.stringify({
+    employee: employee,
+    month: month,
+    risk: risk,
+    rate: rate,
+    duties: duties
+});
 
 let today = new Date().toLocaleDateString();
 
@@ -3189,6 +3284,7 @@ is requested for the month abovementioned.
 
 <div class="signatureRight">
 
+
 <div style="
 text-align:center;
 width:280px;
@@ -3218,6 +3314,9 @@ ${employee}
 Signature over Printed Name
 </div>
 
+
+
+
 <br><br>
 
 
@@ -3226,14 +3325,22 @@ Signature over Printed Name
 Endorsed by:
 </div>
 
+
+<div style="
+width:300px;
+margin:0 auto;
+text-align:center;
+">
+
 <img
 src="${supervisorInfo?.signature || ''}"
 style="
-max-width:120px;
-max-height:60px;
+max-width:140px;
+max-height:55px;
 display:block;
-margin:10px auto -10px auto;
+margin:0 auto 5px auto;
 object-fit:contain;
+background:transparent;
 ">
 
 <div style="
@@ -3243,6 +3350,26 @@ font-weight:bold;
 ">
 ${employeeInfo?.supervisor || ""}
 </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <div style="font-size:11px;">
 Immediate Supervisor
@@ -3753,44 +3880,91 @@ window.scrollTo({
 }
 
 
+
+
 function renderChairApproval(){
 
 let html = "";
 
-hazards.forEach(h=>{
+hazards.forEach(h => {
 
 if(
-
 h.approvalStatus === "PENDING_CHAIR" ||
-
 h.chairApproved === true ||
-
 h.approvalStatus === "PENDING_HEAD" ||
-
 h.approvalStatus === "APPROVED"
-
 ){
+
+let employeeInfo = employees.find(
+e => e.name === h.employee
+);
+
+let salary =
+parseFloat(employeeInfo?.salary || 0);
+
+let ratePercent =
+parseFloat(h.rate);
+
+let percentBasicSalary =
+(salary * ratePercent) / 100;
+
+let actualDays =
+parseFloat(h.days || 0);
+
+let taxableHazardAllowance =
+percentBasicSalary * (actualDays / 22);
+
+let taxRate =
+parseFloat(employeeInfo?.taxRate || 0);
+
+let withholdingTax =
+(taxableHazardAllowance * taxRate) / 100;
+
+let netAmount =
+taxableHazardAllowance - withholdingTax;
+
+let firstRow = true;
+
+(h.duties || []).forEach(d => {
 
 html += `
 <tr>
 
-<td>${h.employee}</td>
+<td>${firstRow ? h.employee : ""}</td>
 
-<td>${h.month}</td>
+<td>${firstRow ? h.month : ""}</td>
 
-<td>${h.approvalStatus}</td>
+<td>${firstRow ? (h.inclusiveDates || "") : ""}</td>
 
+<td>${firstRow ? h.risk : ""}</td>
 
+<td>${firstRow ? h.rate : ""}</td>
+
+<td>${firstRow ? actualDays : ""}</td>
+
+<td>
+${firstRow
+? netAmount.toLocaleString(undefined,{
+minimumFractionDigits:2
+})
+: ""}
+</td>
+
+<td>${d}</td>
+
+<td>
+${firstRow ? h.approvalStatus : ""}
+</td>
 
 <td>
 
 ${
-h.approvalStatus === "PENDING_CHAIR"
-
+firstRow
 ?
-
+(
+h.approvalStatus === "PENDING_CHAIR"
+?
 `
-
 <button
 onclick="chairApprove('${h.id}')"
 style="
@@ -3800,9 +3974,12 @@ border:none;
 padding:8px 12px;
 border-radius:6px;
 cursor:pointer;
+margin-bottom:5px;
 ">
 APPROVE
 </button>
+
+<br>
 
 <button
 onclick="chairReject('${h.id}')"
@@ -3816,38 +3993,29 @@ cursor:pointer;
 ">
 REJECT
 </button>
-
 `
-
 :
-
 `
-
 <span style="
 color:#16a34a;
 font-weight:bold;
 ">
-✓ APPROVED BY CHAIR
+✓ ALREADY FORWARDED
 </span>
-
 `
-
+)
+:
+""
 }
 
 </td>
 
-
-
-
-
-
-
-
-
-
-
 </tr>
 `;
+
+firstRow = false;
+
+});
 
 }
 
@@ -3875,42 +4043,90 @@ h.approvalStatus === "APPROVED"
 
 ){
 
+let employeeInfo = employees.find(
+e => e.name === h.employee
+);
+
+let salary =
+parseFloat(employeeInfo?.salary || 0);
+
+let ratePercent =
+parseFloat(h.rate);
+
+let percentBasicSalary =
+(salary * ratePercent) / 100;
+
+let actualDays =
+parseFloat(h.days || 0);
+
+let taxableHazardAllowance =
+percentBasicSalary * (actualDays / 22);
+
+let taxRate =
+parseFloat(employeeInfo?.taxRate || 0);
+
+let withholdingTax =
+(taxableHazardAllowance * taxRate) / 100;
+
+let netAmount =
+taxableHazardAllowance - withholdingTax;
+
+let firstRow = true;
+
+(h.duties || []).forEach(d => {
+
 html += `
 <tr>
 
-<td>${h.employee}</td>
+<td>${firstRow ? h.employee : ""}</td>
 
-<td>${h.month}</td>
+<td>${firstRow ? h.month : ""}</td>
+
+<td>${firstRow ? (h.inclusiveDates || "") : ""}</td>
+
+<td>${firstRow ? h.risk : ""}</td>
+
+<td>${firstRow ? h.rate : ""}</td>
+
+<td>${firstRow ? actualDays : ""}</td>
 
 <td>
-
-${
-h.approvalStatus === "PENDING_HEAD"
-? "FOR FINAL APPROVAL"
-
-:
-
-h.approvalStatus === "APPROVED"
-? "FULLY APPROVED"
-
-:
-
-h.approvalStatus
-}
-
+${firstRow
+? netAmount.toLocaleString(undefined,{
+minimumFractionDigits:2
+})
+: ""}
 </td>
 
+<td>${d}</td>
 
+<td>
+${firstRow
+?
+(
+h.approvalStatus === "PENDING_HEAD"
+? "FOR FINAL APPROVAL"
+:
+h.approvalStatus === "APPROVED"
+? "FULLY APPROVED"
+:
+h.approvalStatus
+)
+: ""
+}
+</td>
 
 <td>
 
 ${
+firstRow
+?
+(
 h.approvalStatus === "PENDING_HEAD"
 
 ?
 
 `
-
 <button
 onclick="headApprove('${h.id}')"
 style="
@@ -3920,9 +4136,12 @@ border:none;
 padding:8px 12px;
 border-radius:6px;
 cursor:pointer;
+margin-bottom:5px;
 ">
 APPROVE
 </button>
+
+<br>
 
 <button
 onclick="headReject('${h.id}')"
@@ -3936,42 +4155,32 @@ cursor:pointer;
 ">
 REJECT
 </button>
-
 `
 
 :
 
 `
-
 <span style="
 color:#16a34a;
 font-weight:bold;
 ">
 ✓ FINAL APPROVED
 </span>
-
 `
 
+)
+:
+""
 }
 
 </td>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </tr>
 `;
+
+firstRow = false;
+
+});
 
 }
 
@@ -3980,6 +4189,21 @@ font-weight:bold;
 document.getElementById("headApprovalTable").innerHTML = html;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4103,6 +4327,7 @@ alert("Record Rejected.");
 }
 
 </script>
+
 
 </body>
 </html>
