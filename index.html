@@ -338,6 +338,27 @@ display:none;
 
 
 
+<button
+id="chairMenuBtn"
+class="hidden"
+onclick="showSection('chairApproval')">
+Chair Approval
+</button>
+
+<button
+id="headMenuBtn"
+class="hidden"
+onclick="showSection('headApproval')">
+Head of Agency Approval
+</button>
+
+
+
+
+
+
+
+
 
 
 </div>
@@ -346,17 +367,30 @@ display:none;
 
 
 
-
-
-
-
-
-
 <hr style="margin:20px 0;">
+
+<div id="currentUserDisplay"
+style="
+color:white;
+text-align:center;
+font-size:14px;
+margin-bottom:15px;
+padding:10px;
+background:#334155;
+border-radius:8px;
+">
+Not Logged In
+</div>
 
 <button class="logoutBtn" onclick="logout()">
 Logout
 </button>
+
+
+
+
+
+
 
 </div>
 
@@ -772,9 +806,47 @@ Print Payroll
 </div>
 
 
+<div id="chairApprovalSection" class="card hidden">
 
+<h2>Chair Approval</h2>
 
+<table class="staffTable">
 
+<thead>
+<tr>
+<th>Employee</th>
+<th>Month</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="chairApprovalTable"></tbody>
+
+</table>
+
+</div>
+
+<div id="headApprovalSection" class="card hidden">
+
+<h2>Head of Agency Approval</h2>
+
+<table class="staffTable">
+
+<thead>
+<tr>
+<th>Employee</th>
+<th>Month</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="headApprovalTable"></tbody>
+
+</table>
+
+</div>
 
 
 <!-- ADD DUTY MODAL -->
@@ -904,6 +976,13 @@ role:"ADMIN",
 username:"admin"
 }));
 
+
+document.getElementById("currentUserDisplay").innerHTML =
+`
+<b>ADMIN</b><br>
+SYSTEM ADMIN
+`;
+
 showSection("dashboard");
 
 return;
@@ -928,7 +1007,11 @@ currentUser = user;
 localStorage.setItem("currentUser", JSON.stringify(user));
 
 
-
+document.getElementById("currentUserDisplay").innerHTML =
+`
+<b>${user.name}</b><br>
+${user.role}
+`;
 
 
 document.getElementById("loginPage").classList.add("hidden");
@@ -943,6 +1026,7 @@ document.getElementById("staffMenu").classList.add("hidden");
 
 showSection("dashboard");
 
+
 }else{
 
 document.getElementById("panelTitle").innerText = "STAFF PANEL";
@@ -950,11 +1034,33 @@ document.getElementById("panelTitle").innerText = "STAFF PANEL";
 document.getElementById("adminMenu").classList.add("hidden");
 document.getElementById("staffMenu").classList.remove("hidden");
 
+document.getElementById("chairMenuBtn")
+.classList.add("hidden");
+
+document.getElementById("headMenuBtn")
+.classList.add("hidden");
+
+if(user.name === "MARY ANN P. MAGLASIN"){
+
+document.getElementById("chairMenuBtn")
+.classList.remove("hidden");
+
+}
+
+if(user.name === "VIRGINIA G. BILGERA"){
+
+document.getElementById("headMenuBtn")
+.classList.remove("hidden");
+
+}
+
 showSection("myHazard");
 
 renderStaffHazards();
 
 }
+
+
 
 }
 
@@ -978,6 +1084,11 @@ document.getElementById("loginPassword").value = "";
 /* SECTIONS */
 
 function hideAllSections(){
+document.getElementById("chairApprovalSection")
+.classList.add("hidden");
+
+document.getElementById("headApprovalSection")
+.classList.add("hidden");
 
 document.getElementById("dashboardSection").classList.add("hidden");
 document.getElementById("employeesSection").classList.add("hidden");
@@ -987,9 +1098,19 @@ document.getElementById("recordsSection").classList.add("hidden");
 document.getElementById("myHazardSection").classList.add("hidden");
 document.getElementById("payrollSection").classList.add("hidden");
 document.getElementById("approvalSection").classList.add("hidden");
+
+document.getElementById("chairApprovalSection")
+.classList.add("hidden");
+
+document.getElementById("headApprovalSection")
+.classList.add("hidden");
+
+
+
 }
 
 window.showSection = function(section){
+
 
 hideAllSections();
 
@@ -1029,6 +1150,24 @@ renderApprovalRecords();
 
 
 
+if(section === "chairApproval"){
+
+document.getElementById("chairApprovalSection")
+.classList.remove("hidden");
+
+renderChairApproval();
+
+}
+
+if(section === "headApproval"){
+
+document.getElementById("headApprovalSection")
+.classList.remove("hidden");
+
+renderHeadApproval();
+
+}
+
 
 
 
@@ -1039,6 +1178,8 @@ document.getElementById("payrollSection").classList.remove("hidden");
 loadPayrollMonths();
 filterPayroll();
 }
+
+
 
 window.printPayroll = function(){
 
@@ -1972,13 +2113,6 @@ return;
 }
 
 
-
-
-
-
-
-
-
 let record = {
 
 employee: employee.name,
@@ -1989,13 +2123,31 @@ days: days,
 risk: risk,
 rate: rate,
 
-
-
 duties: [],
-approvalStatus: "PENDING"
 
+approvalStatus: "PENDING_SUPERVISOR",
+
+supervisorApproved: false,
+chairApproved: false,
+headApproved: false,
+
+supervisorApprovedBy: "",
+supervisorApprovedDate: "",
+
+chairApprovedBy: "",
+chairApprovedDate: "",
+
+headApprovedBy: "",
+headApprovedDate: ""
 
 };
+
+
+
+
+
+
+
 
 
 let existing = hazards.find(h =>
@@ -2414,18 +2566,17 @@ firstRow
 ?
 
 (
+h.approvalStatus === "PENDING_CHAIR" ||
 h.approvalStatus === "APPROVED"
 ?
-
 `
-
 <div style="display:flex; flex-direction:column; gap:8px;">
 
 <span style="
 color:#16a34a;
 font-weight:bold;
 ">
-APPROVED
+APPROVED BY SUPERVISOR
 </span>
 
 <button
@@ -2443,10 +2594,11 @@ PRINT CERTIFICATE
 </button>
 
 </div>
-
 `
-
 :
+
+
+
 
 h.approvalStatus === "REJECTED"
 
@@ -2774,7 +2926,7 @@ let ref = doc(db,"hazards",selectedHazardId);
 
 await updateDoc(ref,{
 duties: duties,
-approvalStatus: "PENDING"
+approvalStatus: "PENDING_SUPERVISOR"
 });
 
 document.getElementById("dutyModal").style.display = "none";
@@ -2798,7 +2950,10 @@ window.approveHazard = async function(docId){
 let ref = doc(db,"hazards",docId);
 
 await updateDoc(ref,{
-approvalStatus:"APPROVED"
+approvalStatus:"PENDING_CHAIR",
+supervisorApproved:true,
+supervisorApprovedBy:currentUser.name,
+supervisorApprovedDate:new Date().toLocaleDateString()
 });
 
 alert("Hazard Approved");
@@ -3469,6 +3624,13 @@ window.addEventListener("load", ()=>{
 
 if(currentUser){
 
+
+document.getElementById("currentUserDisplay").innerHTML =
+`
+<b>${currentUser.name || "ADMIN"}</b><br>
+${currentUser.role}
+`;
+
 document.getElementById("loginPage").classList.add("hidden");
 document.getElementById("mainSystem").classList.remove("hidden");
 
@@ -3488,11 +3650,35 @@ document.getElementById("panelTitle").innerText = "STAFF PANEL";
 document.getElementById("adminMenu").classList.add("hidden");
 document.getElementById("staffMenu").classList.remove("hidden");
 
+document.getElementById("chairMenuBtn")
+.classList.add("hidden");
+
+document.getElementById("headMenuBtn")
+.classList.add("hidden");
+
+if(currentUser.name === "MARY ANN P. MAGLASIN"){
+
+document.getElementById("chairMenuBtn")
+.classList.remove("hidden");
+
+}
+
+if(currentUser.name === "VIRGINIA G. BILGERA"){
+
+document.getElementById("headMenuBtn")
+.classList.remove("hidden");
+
+}
+
 showSection("myHazard");
 
 renderStaffHazards();
 updateApprovalBadge();
+
 }
+
+
+
 
 }
 
