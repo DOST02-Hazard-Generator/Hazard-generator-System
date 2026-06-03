@@ -1769,7 +1769,7 @@ as indicated opposite his/her name.
 <br><br><br>
 
 <div class="signLine">
-MICAH M. TAGUBA
+MARY ANN P. MAGLASIN
 </div>
 
 Disbursing Officer
@@ -1779,15 +1779,6 @@ Disbursing Officer
 </tr>
 
 </table>
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2530,13 +2521,24 @@ if(
 employeeInfo &&
 employeeInfo.supervisor &&
 employeeInfo.supervisor.trim() === currentUser.name.trim() &&
-h.duties && h.duties.length > 0 // 👈 ADD THIS
+h.duties &&
+h.duties.length > 0
 ){
 
 
 
+}
 
 
+
+
+if(
+employeeInfo &&
+employeeInfo.supervisor &&
+employeeInfo.supervisor.trim() === currentUser.name.trim() &&
+h.duties &&
+h.duties.length > 0
+){
 
 let firstRow = true;
 
@@ -2562,59 +2564,9 @@ html += `
 <td>
 
 ${
-firstRow
-?
-
-(
-h.approvalStatus === "PENDING_CHAIR" ||
-h.approvalStatus === "APPROVED"
+h.approvalStatus === "PENDING_SUPERVISOR"
 ?
 `
-<div style="display:flex; flex-direction:column; gap:8px;">
-
-<span style="
-color:#16a34a;
-font-weight:bold;
-">
-APPROVED BY SUPERVISOR
-</span>
-
-<button
-onclick="printCertificate('${h.employee}','${h.month}','${h.risk}','${h.rate}',${index})"
-style="
-background:#2563eb;
-color:white;
-border:none;
-padding:8px 12px;
-border-radius:6px;
-cursor:pointer;
-font-weight:bold;
-">
-PRINT CERTIFICATE
-</button>
-
-</div>
-`
-:
-
-
-
-
-h.approvalStatus === "REJECTED"
-
-?
-
-`<span style="
-color:#dc2626;
-font-weight:bold;
-">
-REJECTED
-</span>`
-
-:
-
-`
-
 <button
 onclick="approveHazard('${h.id}')"
 style="
@@ -2645,15 +2597,16 @@ font-weight:bold;
 ">
 REJECT
 </button>
-
 `
-
-)
-
 :
-
-""
-
+`
+<span style="
+color:#16a34a;
+font-weight:bold;
+">
+✓ ALREADY FORWARDED
+</span>
+`
 }
 
 </td>
@@ -2665,25 +2618,27 @@ firstRow = false;
 
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 });
 
@@ -2950,33 +2905,21 @@ window.approveHazard = async function(docId){
 let ref = doc(db,"hazards",docId);
 
 await updateDoc(ref,{
+
 approvalStatus:"PENDING_CHAIR",
+
 supervisorApproved:true,
 supervisorApprovedBy:currentUser.name,
-supervisorApprovedDate:new Date().toLocaleDateString()
+supervisorApprovedDate:new Date().toLocaleDateString(),
+
+chairApproved:false,
+headApproved:false
+
 });
 
-alert("Hazard Approved");
+alert("Successfully forwarded to Chair Committee Approval.");
 
 }
-
-window.rejectHazard = async function(docId){
-
-let ref = doc(db,"hazards",docId);
-
-await updateDoc(ref,{
-approvalStatus:"REJECTED"
-});
-
-alert("Hazard Rejected");
-
-}
-
-
-
-
-
-
 
 
 
@@ -2995,6 +2938,17 @@ let employeeInfo = employees.find(e => e.name === employee);
 let supervisorInfo = employees.find(
 e => e.name === employeeInfo?.supervisor
 );
+
+
+let chairInfo = employees.find(
+e => e.name === "MARY ANN P. MAGLASIN"
+);
+
+let headInfo = employees.find(
+e => e.name === "VIRGINIA G. BILGERA"
+);
+
+
 
 console.log(employeeInfo);
 console.log(employeeInfo?.signature);
@@ -3298,66 +3252,84 @@ Immediate Supervisor
 
 
 
-
-
-
-
-
-
-
-
-
-
 </div>
 
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <div class="signatureLeft">
 
 Recommending Approval:
 
-<br><br><br>
+<br><br>
+
+<img
+src="${
+h.chairApproved
+? (chairInfo?.signature || "")
+: ""
+}"
+style="
+max-width:120px;
+max-height:60px;
+display:block;
+margin-bottom:-10px;
+object-fit:contain;
+">
 
 <span class="line">
-MARY ANN P. MAGLASIN
+${h.chairApproved ? "MARY ANN P. MAGLASIN" : ""}
 </span>
 
 <br>
 
 Chair, Agency Hazard Committee
 
+
+
+
 <br><br><br>
+
 
 Approval:
 
-<br><br><br>
+<br><br>
+
+<img
+src="${
+h.headApproved
+? (headInfo?.signature || "")
+: ""
+}"
+style="
+max-width:120px;
+max-height:60px;
+display:block;
+margin-bottom:-10px;
+object-fit:contain;
+">
 
 <span class="line">
-VIRGINIA G. BILGERA
+${h.headApproved ? "VIRGINIA G. BILGERA" : ""}
 </span>
 
 <br>
 
- Head of Agency | Regional Director
+Head of Agency | Regional Director
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 </div>
 
@@ -3379,7 +3351,12 @@ VIRGINIA G. BILGERA
 
 printWindow.document.close();
 
-printWindow.print();
+setTimeout(()=>{
+
+    printWindow.focus();
+    printWindow.print();
+
+},1000);
 
 }
 
@@ -3610,6 +3587,11 @@ id: docu.id,
 
 renderRecords();
 renderApprovalRecords();
+
+renderChairApproval();
+renderHeadApproval();
+renderStaffHazards();
+
 updateApprovalBadge();
 updateDashboard();
 
@@ -3771,6 +3753,267 @@ window.scrollTo({
 }
 
 
+function renderChairApproval(){
+
+let html = "";
+
+hazards.forEach(h=>{
+
+if(
+
+h.approvalStatus === "PENDING_CHAIR" ||
+
+h.chairApproved === true ||
+
+h.approvalStatus === "PENDING_HEAD" ||
+
+h.approvalStatus === "APPROVED"
+
+){
+
+html += `
+<tr>
+
+<td>${h.employee}</td>
+
+<td>${h.month}</td>
+
+<td>${h.approvalStatus}</td>
+
+
+
+<td>
+
+${
+h.approvalStatus === "PENDING_CHAIR"
+
+?
+
+`
+
+<button
+onclick="chairApprove('${h.id}')"
+style="
+background:#16a34a;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+">
+APPROVE
+</button>
+
+<button
+onclick="chairReject('${h.id}')"
+style="
+background:#dc2626;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+">
+REJECT
+</button>
+
+`
+
+:
+
+`
+
+<span style="
+color:#16a34a;
+font-weight:bold;
+">
+✓ APPROVED BY CHAIR
+</span>
+
+`
+
+}
+
+</td>
+
+
+
+
+
+
+
+
+
+
+
+</tr>
+`;
+
+}
+
+});
+
+document.getElementById("chairApprovalTable").innerHTML = html;
+
+}
+
+
+
+function renderHeadApproval(){
+
+let html = "";
+
+hazards.forEach(h=>{
+
+if(
+
+h.approvalStatus === "PENDING_HEAD" ||
+
+h.headApproved === true ||
+
+h.approvalStatus === "APPROVED"
+
+){
+
+html += `
+<tr>
+
+<td>${h.employee}</td>
+
+<td>${h.month}</td>
+
+<td>
+
+${
+h.approvalStatus === "PENDING_HEAD"
+? "FOR FINAL APPROVAL"
+
+:
+
+h.approvalStatus === "APPROVED"
+? "FULLY APPROVED"
+
+:
+
+h.approvalStatus
+}
+
+</td>
+
+
+
+<td>
+
+${
+h.approvalStatus === "PENDING_HEAD"
+
+?
+
+`
+
+<button
+onclick="headApprove('${h.id}')"
+style="
+background:#16a34a;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+">
+APPROVE
+</button>
+
+<button
+onclick="headReject('${h.id}')"
+style="
+background:#dc2626;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+">
+REJECT
+</button>
+
+`
+
+:
+
+`
+
+<span style="
+color:#16a34a;
+font-weight:bold;
+">
+✓ FINAL APPROVED
+</span>
+
+`
+
+}
+
+</td>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</tr>
+`;
+
+}
+
+});
+
+document.getElementById("headApprovalTable").innerHTML = html;
+
+}
+
+
+
+window.chairApprove = async function(docId){
+
+let ref = doc(db,"hazards",docId);
+
+await updateDoc(ref,{
+
+approvalStatus:"PENDING_HEAD",
+
+chairApproved:true,
+chairApprovedBy:"MARY ANN P. MAGLASIN",
+chairApprovedDate:new Date().toLocaleDateString()
+
+});
+
+renderChairApproval();
+renderHeadApproval();
+
+
+
+alert("Forwarded to Head of Agency.");
+
+}
+
+
+
+
+
+
+
+
+
 function updateApprovalBadge(){
 
 if(!currentUser){
@@ -3815,8 +4058,49 @@ badge.style.display = "none";
 
 }
 
+window.chairReject = async function(docId){
 
+let ref = doc(db,"hazards",docId);
 
+await updateDoc(ref,{
+approvalStatus:"REJECTED_BY_CHAIR"
+});
+
+alert("Record Rejected.");
+
+}
+
+window.headApprove = async function(docId){
+
+let ref = doc(db,"hazards",docId);
+
+await updateDoc(ref,{
+
+approvalStatus:"APPROVED",
+
+headApproved:true,
+headApprovedBy:"VIRGINIA G. BILGERA",
+headApprovedDate:new Date().toLocaleDateString()
+
+});
+
+renderHeadApproval();
+renderChairApproval();
+alert("Final Approval Completed.");
+
+}
+
+window.headReject = async function(docId){
+
+let ref = doc(db,"hazards",docId);
+
+await updateDoc(ref,{
+approvalStatus:"REJECTED_BY_HEAD"
+});
+
+alert("Record Rejected.");
+
+}
 
 </script>
 
