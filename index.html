@@ -256,8 +256,22 @@ font-weight:600;
 }
 
 .staffTable th{
-    background:#e2e8f0;
-    text-align:center;
+
+background:
+linear-gradient(
+90deg,
+#0b1f3a,
+#003366
+);
+
+color:white;
+
+font-weight:600;
+
+text-align:center;
+
+padding:12px;
+
 }
 
 .actionBtns{
@@ -280,29 +294,99 @@ font-weight:600;
     background:#1d4ed8;
 }
 
+
+
 .modal{
     display:none;
     position:fixed;
-    z-index:9999;
-    left:0;
-    top:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.5);
+    inset:0;
+    background:rgba(15,23,42,.55);
+    backdrop-filter:blur(6px);
+    z-index:99999;
 }
 
 .modalContent{
-    background:white;
-    width:500px;
+    width:450px;
     max-width:90%;
-    margin:10% auto;
-    padding:20px;
-    border-radius:10px;
+    background:white;
+    margin:8% auto;
+    padding:30px;
+
+    border-radius:20px;
+
+    box-shadow:
+    0 25px 60px rgba(0,0,0,.25);
+
+    border:1px solid rgba(255,255,255,.5);
 }
 
 .modalContent h3{
-    margin-bottom:15px;
+    color:#0b1f3a;
+    font-size:24px;
+    font-weight:700;
+    text-align:center;
+    margin-bottom:25px;
 }
+
+
+
+
+.passwordBtns{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+
+.passwordSaveBtn{
+    flex:1;
+
+    border:none;
+    border-radius:12px;
+
+    padding:12px;
+
+    cursor:pointer;
+
+    color:white;
+    font-weight:600;
+
+    background:
+    linear-gradient(
+    90deg,
+    #2563eb,
+    #3b82f6
+    );
+}
+
+.passwordCancelBtn{
+    flex:1;
+
+    border:none;
+    border-radius:12px;
+
+    padding:12px;
+
+    cursor:pointer;
+
+    color:white;
+    font-weight:600;
+
+    background:
+    linear-gradient(
+    90deg,
+    #dc2626,
+    #ef4444
+    );
+}
+
+
+
+
+
+
+
+
+
 
 .closeBtn{
     background:#dc2626;
@@ -394,17 +478,6 @@ border:1px solid rgba(255,255,255,.15);
 backdrop-filter:blur(5px);
 
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -559,12 +632,24 @@ border-radius:8px;
 Not Logged In
 </div>
 
-<button class="logoutBtn" onclick="logout()">
-Logout
+
+
+<button
+onclick="openChangePasswordModal()"
+class="menuBtn"
+style="background:#2563eb;"
+>
+EDIT PASSWORD
 </button>
 
 
 
+
+
+
+<button class="logoutBtn" onclick="logout()">
+Logout
+</button>
 
 
 
@@ -4734,62 +4819,216 @@ console.log(payrollRecords);
 
 }
 
+window.openChangePasswordModal = function(){
+
+    document.getElementById(
+        "changePasswordModal"
+    ).style.display = "block";
+
+}
+
+window.closeChangePasswordModal = function(){
+
+    document.getElementById(
+        "changePasswordModal"
+    ).style.display = "none";
+
+}
 
 
+window.changePassword = async function(){
+
+    let currentPass =
+    document.getElementById("currentPassword").value.trim();
+
+    let newPass =
+    document.getElementById("newPassword").value.trim();
+
+    let confirmPass =
+    document.getElementById("confirmPassword").value.trim();
+
+    if(!currentPass || !newPass || !confirmPass){
+
+        alert("Please complete all fields.");
+        return;
+
+    }
+
+    if(currentPass !== currentUser.password){
+
+        alert("Current password is incorrect.");
+        return;
+
+    }
+
+    if(newPass.length < 6){
+
+        alert(
+        "New password must be at least 6 characters."
+        );
+
+        return;
+
+    }
+
+    if(newPass !== confirmPass){
+
+        alert("Password confirmation does not match.");
+        return;
+
+    }
+
+    try{
+
+        let ref =
+        doc(db,"accounts",currentUser.id);
+
+        await updateDoc(ref,{
+            password:newPass
+        });
+
+        currentUser.password = newPass;
+
+        localStorage.setItem(
+            "currentUser",
+            JSON.stringify(currentUser)
+        );
+
+        alert(
+        "Password successfully updated."
+        );
+
+        closeChangePasswordModal();
+
+        document.getElementById(
+        "currentPassword"
+        ).value = "";
+
+        document.getElementById(
+        "newPassword"
+        ).value = "";
+
+        document.getElementById(
+        "confirmPassword"
+        ).value = "";
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+        "Failed to update password."
+        );
+
+    }
+
+}
 
 
+window.saveNewPassword = async function(){
 
+let oldPassword =
+document.getElementById("oldPassword").value;
 
+let newPassword =
+document.getElementById("newPassword").value;
 
+let confirmPassword =
+document.getElementById("confirmPassword").value;
 
+if(
+oldPassword === "" ||
+newPassword === "" ||
+confirmPassword === ""
+){
+    alert("Please complete all fields.");
+    return;
+}
+
+if(newPassword !== confirmPassword){
+    alert("New password does not match.");
+    return;
+}
+
+let account = accounts.find(
+a =>
+a.username === currentUser.username &&
+a.password === oldPassword
+);
+
+if(!account){
+    alert("Current password is incorrect.");
+    return;
+}
+
+await updateDoc(
+doc(db,"accounts",account.id),
+{
+password:newPassword
+}
+);
+
+alert("Password successfully updated.");
+
+closeChangePasswordModal();
+
+document.getElementById("oldPassword").value = "";
+document.getElementById("newPassword").value = "";
+document.getElementById("confirmPassword").value = "";
+
+}
 
 
 
 </script>
 
-<script>
 
-// Disable Right Click
-document.addEventListener("contextmenu", function(e){
-    e.preventDefault();
-});
+<!-- CHANGE PASSWORD MODAL -->
+<div id="changePasswordModal" class="modal">
 
-// Disable Developer Keys
-document.addEventListener("keydown", function(e){
+<div class="modalContent">
 
-    // F12
-    if(e.key === "F12"){
-        e.preventDefault();
-    }
+<h3>🔒 Change Password</h3>
 
-    // Ctrl+U
-    if(e.ctrlKey && e.key.toLowerCase() === "u"){
-        e.preventDefault();
-    }
+<input
+type="password"
+id="oldPassword"
+placeholder="Enter Current Password">
 
-    // Ctrl+Shift+I
-    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i"){
-        e.preventDefault();
-    }
+<input
+type="password"
+id="newPassword"
+placeholder="Enter New Password">
 
-    // Ctrl+Shift+J
-    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "j"){
-        e.preventDefault();
-    }
+<input
+type="password"
+id="confirmPassword"
+placeholder="Confirm New Password">
 
-    // Ctrl+Shift+C
-    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c"){
-        e.preventDefault();
-    }
+<div class="passwordBtns">
 
-    // Ctrl+S
-    if(e.ctrlKey && e.key.toLowerCase() === "s"){
-        e.preventDefault();
-    }
+<button
+class="passwordSaveBtn"
+onclick="saveNewPassword()">
+Save Changes
+</button>
 
-});
+<button
+class="passwordCancelBtn"
+onclick="closeChangePasswordModal()">
+Cancel
+</button>
 
-</script>
+</div>
+
+</div>
+
+</div>
+
+
+
+
+
 
 </body>
 </html>
