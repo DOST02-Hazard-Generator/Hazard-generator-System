@@ -9,23 +9,42 @@
 
 <style>
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:Arial;
+    font-family:'Inter',sans-serif;
 }
 
 body{
-    background:#f1f5f9;
+    background:
+    linear-gradient(
+    135deg,
+    #f8fafc 0%,
+    #eef4ff 50%,
+    #f8fafc 100%
+    );
 }
 
 header{
-    background:#0f172a;
+    background:
+    linear-gradient(
+    90deg,
+    #0b1f3a,
+    #003366,
+    #0057b8
+    );
+
     color:white;
-    padding:15px;
-    font-size:24px;
-    font-weight:bold;
+    padding:20px 30px;
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:1px;
+
+    box-shadow:
+    0 4px 20px rgba(0,0,0,.15);
 }
 
 .container{
@@ -34,9 +53,19 @@ header{
 }
 
 .sidebar{
-    width:240px;
-    background:#1e293b;
+    width:270px;
+
+    background:
+    linear-gradient(
+    180deg,
+    #0b1f3a,
+    #122c52
+    );
+
     padding:20px;
+
+    box-shadow:
+    5px 0 25px rgba(0,0,0,.15);
 }
 
 .sidebar h2{
@@ -46,17 +75,29 @@ header{
 
 .sidebar button{
     width:100%;
-    padding:12px;
+    padding:14px;
     margin-bottom:10px;
+
     border:none;
-    border-radius:8px;
-    background:#334155;
+    border-radius:12px;
+
+    background:rgba(255,255,255,.08);
+
     color:white;
+
     cursor:pointer;
+
+    font-weight:600;
+
+    transition:.3s;
 }
 
 .sidebar button:hover{
-    background:#475569;
+
+    background:#0066cc;
+
+    transform:translateX(5px);
+
 }
 
 .main{
@@ -65,20 +106,43 @@ header{
 }
 
 .card{
-    background:white;
-    padding:20px;
-    border-radius:10px;
+
+    background:rgba(255,255,255,.95);
+
+    backdrop-filter:blur(10px);
+
+    padding:25px;
+
+    border-radius:18px;
+
     margin-bottom:20px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+
+    border:1px solid rgba(255,255,255,.5);
+
+    box-shadow:
+    0 10px 35px rgba(15,23,42,.08);
+
 }
 
-input, select, textarea{
+input,
+select,
+textarea{
+
     width:100%;
-    padding:10px;
+
+    padding:12px 15px;
+
     margin-top:5px;
     margin-bottom:15px;
-    border:1px solid #ccc;
-    border-radius:6px;
+
+    border:1px solid #dbe4f0;
+
+    border-radius:12px;
+
+    background:white;
+
+    transition:.3s;
+
 }
 
 textarea{
@@ -86,16 +150,37 @@ textarea{
 }
 
 .saveBtn{
-    background:#16a34a;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    border-radius:8px;
-    cursor:pointer;
+
+background:
+linear-gradient(
+90deg,
+#0066cc,
+#0084ff
+);
+
+color:white;
+
+border:none;
+
+padding:12px 24px;
+
+border-radius:12px;
+
+cursor:pointer;
+
+font-weight:600;
+
+transition:.3s;
+
 }
 
 .saveBtn:hover{
-    background:#15803d;
+
+transform:translateY(-2px);
+
+box-shadow:
+0 8px 20px rgba(0,102,204,.25);
+
 }
 
 table{
@@ -109,7 +194,18 @@ table th, table td{
 }
 
 table th{
-    background:#e2e8f0;
+
+background:
+linear-gradient(
+90deg,
+#0b1f3a,
+#003366
+);
+
+color:white;
+
+font-weight:600;
+
 }
 
 .hidden{
@@ -244,6 +340,73 @@ margin-bottom:20px;
     background:#1d4ed8;
     transform:translateY(-1px);
 }
+
+
+input:focus,
+select:focus,
+textarea:focus{
+
+outline:none;
+
+border-color:#0066cc;
+
+box-shadow:
+0 0 0 4px rgba(0,102,204,.15);
+
+}
+
+
+
+
+h2{
+
+color:#0b1f3a;
+
+font-weight:700;
+
+margin-bottom:20px;
+
+border-left:5px solid #0066cc;
+
+padding-left:12px;
+
+}
+
+table tr:hover{
+
+background:#f8fbff;
+
+}
+
+.loginBox{
+
+border-radius:20px;
+
+box-shadow:
+0 20px 50px rgba(0,0,0,.12);
+
+}
+
+#currentUserDisplay{
+
+border:1px solid rgba(255,255,255,.15);
+
+backdrop-filter:blur(5px);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4584,12 +4747,49 @@ console.log(payrollRecords);
 
 </script>
 
+<script>
 
+// Disable Right Click
+document.addEventListener("contextmenu", function(e){
+    e.preventDefault();
+});
 
+// Disable Developer Keys
+document.addEventListener("keydown", function(e){
 
+    // F12
+    if(e.key === "F12"){
+        e.preventDefault();
+    }
 
+    // Ctrl+U
+    if(e.ctrlKey && e.key.toLowerCase() === "u"){
+        e.preventDefault();
+    }
 
+    // Ctrl+Shift+I
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i"){
+        e.preventDefault();
+    }
 
+    // Ctrl+Shift+J
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "j"){
+        e.preventDefault();
+    }
+
+    // Ctrl+Shift+C
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "c"){
+        e.preventDefault();
+    }
+
+    // Ctrl+S
+    if(e.ctrlKey && e.key.toLowerCase() === "s"){
+        e.preventDefault();
+    }
+
+});
+
+</script>
 
 </body>
 </html>
