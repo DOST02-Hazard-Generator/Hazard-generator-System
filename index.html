@@ -228,6 +228,25 @@ margin-bottom:20px;
 
 
 
+.addItemBtn{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.3s;
+    box-shadow:0 2px 5px rgba(0,0,0,0.15);
+}
+
+.addItemBtn:hover{
+    background:#1d4ed8;
+    transform:translateY(-1px);
+}
+
+
+
 
 </style>
 </head>
@@ -630,7 +649,10 @@ Create Account
 <input type="text" id="selectedSupervisor" readonly>
 
 <label>Month</label>
-<input type="month" id="month">
+<input
+type="month"
+id="month"
+onchange="loadHazardDropdown()">
 
 <label>Inclusive Dates</label>
 <input type="text" id="inclusiveDates">
@@ -699,11 +721,58 @@ Generate Hazard
 
 <h2>Generate Hazard Payroll</h2>
 
-<label>Select Month</label>
+<label>Select Year / Month</label>
 
-<select id="payrollMonth" onchange="filterPayroll()">
-<option value="">Select Month</option>
-</select>
+<input
+type="month"
+id="payrollMonth"
+onchange="filterPayroll()">
+
+<h3>WITHOUT PAYROLL</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Employee No.</th>
+<th>Employee Name</th>
+<th>Position</th>
+<th>Office</th>
+</tr>
+</thead>
+
+<tbody id="noPayrollList"></tbody>
+
+</table>
+
+<br>
+
+<h3>WITH PAYROLL</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Employee No.</th>
+<th>Employee Name</th>
+<th>Position</th>
+<th>Risk</th>
+<th>Rate</th>
+<th>Days</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="withPayrollList"></tbody>
+
+</table>
+
+
+
+
+
+
+
 
 <br><br>
 
@@ -881,10 +950,14 @@ Print Payroll
 
 </div>
 
-<button type="button" onclick="addDutyField()">
-+ Add Item
-</button>
+<button
+type="button"
+class="addItemBtn"
+onclick="addDutyField()">
 
+➕ Add Another Duty
+
+</button>
 
 
 
@@ -1189,10 +1262,8 @@ renderHeadApproval();
 
 if(section === "payroll"){
 document.getElementById("payrollSection").classList.remove("hidden");
-loadPayrollMonths();
 filterPayroll();
 }
-
 
 
 window.printPayroll = function(){
@@ -2170,12 +2241,19 @@ return;
 
 
 
-
-
-
 await addDoc(collection(db,"hazards"), record);
 
+loadHazardDropdown();
+
+document.getElementById("selectedUser").selectedIndex = 0;
+document.getElementById("selectedPosition").value = "";
+document.getElementById("selectedOffice").value = "";
+document.getElementById("selectedSupervisor").value = "";
+
 alert("Hazard Generated!");
+
+
+
 
 }catch(error){
 
@@ -2448,70 +2526,17 @@ loadPayrollMonths();
 
 /* PAYROLL */
 
-window.loadPayrollMonths = function(){
 
-let dropdown = document.getElementById("payrollMonth");
 
-let months = [...new Set(hazards.map(h => h.month))];
 
-dropdown.innerHTML = `
-<option value="">Select Month</option>
-`;
 
-months.forEach(month=>{
 
-dropdown.innerHTML += `
-<option value="${month}">
-${month}
-</option>
-`;
 
-});
 
-}
 
-window.filterPayroll = function(){
 
-let month = document.getElementById("payrollMonth").value;
 
-let html = "";
 
-let filtered = hazards
-.filter(h => h.month === month)
-.sort((a,b) => {
-
-let empA = employees.find(e => e.name === a.employee);
-let empB = employees.find(e => e.name === b.employee);
-
-return Number(empA?.employeeNo || 0) -
-       Number(empB?.employeeNo || 0);
-
-});
-
-filtered.forEach((h,index)=>{
-
-let emp = employees.find(e => e.name === h.employee);
-
-html += `
-<tr>
-<td>${index + 1}</td>
-<td>${h.employee}</td>
-<td>${emp?.position || ""}</td>
-<td>${emp?.office || ""}</td>
-<td>${emp?.supervisor || ""}</td>
-<td>${emp?.salary || ""}</td>
-<td>${emp?.atmNumber || ""}</td>
-<td>${h.month}</td>
-<td>${h.risk}</td>
-<td>${h.rate}</td>
-</tr>
-`;
-
-});
-
-document.getElementById("payrollTable").innerHTML = html;
-
-}
 
 
 
@@ -2691,17 +2716,6 @@ firstRow = false;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 });
 
 document.getElementById("approvalTable").innerHTML = html;
@@ -2838,6 +2852,8 @@ minimumFractionDigits:2
 ${(h.duties || []).join("<br>")}
 </td>
 
+
+
 <td>
 
 <div class="actionBtns">
@@ -2845,7 +2861,11 @@ ${(h.duties || []).join("<br>")}
 <button
 class="saveBtn"
 onclick="openDutyModal('${h.id}',${index})">
-Add Duty
+
+${(h.duties && h.duties.length > 0)
+? "Edit Duty"
+: "Add Duty"}
+
 </button>
 
 <button
@@ -2854,9 +2874,59 @@ onclick="validatePrintCertificate(${index})">
 PRINT CERTIFICATE
 </button>
 
+${
+(h.duties && h.duties.length > 0)
+?
+
+`<div style="
+color:#16a34a;
+font-weight:bold;
+font-size:12px;
+text-align:center;
+margin-top:5px;
+">
+✓ Signed & Submitted
+</div>`
+
+:
+
+`<div style="
+color:#dc2626;
+font-weight:bold;
+font-size:12px;
+text-align:center;
+margin-top:5px;
+">
+Not Yet Submitted
+</div>`
+}
+
 </div>
 
 </td>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 </tr>
 
@@ -2890,25 +2960,48 @@ document.getElementById("staffRecords").innerHTML = html;
 
 }
 
-
 window.openDutyModal = function(docId,index){
 
 selectedHazardId = docId;
 selectedHazardIndex = index;
 
-// reset fields
-document.getElementById("dutiesContainer").innerHTML = `
-<input type="text" class="dutyField"><br>
-<input type="text" class="dutyField"><br>
-<input type="text" class="dutyField"><br>
-<input type="text" class="dutyField"><br>
-<input type="text" class="dutyField"><br>
+let h = hazards[index];
+
+let container =
+document.getElementById("dutiesContainer");
+
+container.innerHTML = "";
+
+if(h.duties && h.duties.length > 0){
+
+h.duties.forEach(duty=>{
+
+container.innerHTML += `
+<input
+type="text"
+class="dutyField"
+value="${duty}">
+<br>
 `;
+
+});
+
+}else{
+
+for(let i=0;i<5;i++){
+
+container.innerHTML += `
+<input type="text" class="dutyField">
+<br>
+`;
+
+}
+
+}
 
 document.getElementById("dutyModal").style.display = "block";
 
 }
-
 
 
 
@@ -3628,36 +3721,58 @@ ${emp.name}
 
 }
 
-
 function loadHazardDropdown(){
 
 let dropdown = document.getElementById("selectedUser");
 
-dropdown.innerHTML = `
-<option value="">Select Employee</option>
-`;
+let selectedMonth =
+document.getElementById("month")?.value || "";
 
+dropdown.innerHTML =
+`<option value="">Select Employee</option>`;
+
+let employeesWithoutPayroll =
 [...employees]
+.filter(emp => {
+
+if(!selectedMonth) return true;
+
+let existing = hazards.find(h =>
+
+h.employee === emp.name &&
+h.month === selectedMonth
+
+);
+
+return !existing;
+
+})
 .sort((a,b)=>
 Number(a.employeeNo || 0) -
 Number(b.employeeNo || 0)
-)
-.forEach(emp=>{
+);
 
-let originalIndex = employees.findIndex(
+employeesWithoutPayroll.forEach(emp=>{
+
+let originalIndex =
+employees.findIndex(
 e => e.id === emp.id
 );
 
 dropdown.innerHTML += `
 <option value="${originalIndex}">
-${emp.name}
+${emp.employeeNo || ""} - ${emp.name}
 </option>
-
 `;
 
 });
 
 }
+
+
+
+
+
 
 
 
@@ -3722,7 +3837,10 @@ renderStaffHazards();
 updateApprovalBadge();
 updateDashboard();
 
+if(document.getElementById("payrollMonth")){
+    filterPayroll();
 
+}
 });
 
 
@@ -4022,8 +4140,8 @@ firstRow = false;
 });
 
 document.getElementById("chairApprovalTable").innerHTML = html;
-
 }
+
 
 
 
@@ -4326,7 +4444,151 @@ alert("Record Rejected.");
 
 }
 
+window.filterPayroll = function(){
+
+    let selectedMonth =
+    document.getElementById("payrollMonth").value;
+
+console.log("Selected Month:", selectedMonth);
+console.log("Hazards Loaded:", hazards.length);
+console.log(hazards);
+
+
+
+    let noPayrollHTML = "";
+    let withPayrollHTML = "";
+
+    if(!selectedMonth){
+
+        document.getElementById("noPayrollList").innerHTML = "";
+        document.getElementById("withPayrollList").innerHTML = "";
+
+        return;
+    }
+
+    // =========================
+    // EMPLOYEES WITH PAYROLL
+    // =========================
+
+    let generatedEmployees = new Set();
+
+   let payrollRecords = hazards.filter(h => {
+
+    if(!h.month) return false;
+
+    return h.month.trim() === selectedMonth.trim();
+
+});
+
+
+console.log("Payroll Records Found:", payrollRecords.length);
+console.log(payrollRecords);
+
+
+    payrollRecords.sort((a,b)=>{
+
+        let empA = employees.find(
+            e => e.name === a.employee
+        );
+
+        let empB = employees.find(
+            e => e.name === b.employee
+        );
+
+        return Number(empA?.employeeNo || 0) -
+               Number(empB?.employeeNo || 0);
+
+    });
+
+
+
+    payrollRecords.forEach(h => {
+
+        generatedEmployees.add(h.employee);
+
+        let emp = employees.find(
+            e => e.name === h.employee
+        );
+
+       withPayrollHTML += `
+<tr>
+    <td>${emp?.employeeNo || ""}</td>
+    <td>${h.employee}</td>
+    <td>${emp?.position || ""}</td>
+    <td>${h.risk}</td>
+    <td>${h.rate}</td>
+    <td>${h.days || ""}</td>
+    <td>${h.approvalStatus || ""}</td>
+</tr>
+`;
+    });
+
+    // =========================
+    // EMPLOYEES WITHOUT PAYROLL
+    // =========================
+
+    [...employees]
+    .sort((a,b)=>
+        Number(a.employeeNo || 0) -
+        Number(b.employeeNo || 0)
+    )
+    .forEach(emp => {
+
+        if(!generatedEmployees.has(emp.name)){
+
+            noPayrollHTML += `
+            <tr>
+                <td>${emp.employeeNo || ""}</td>
+                <td>${emp.name}</td>
+                <td>${emp.position || ""}</td>
+                <td>${emp.office || ""}</td>
+            </tr>
+            `;
+        }
+
+    });
+
+    document.getElementById("withPayrollList").innerHTML =
+    withPayrollHTML;
+
+    document.getElementById("noPayrollList").innerHTML =
+    noPayrollHTML;
+
+    console.log(
+        "TOTAL EMPLOYEES:",
+        employees.length
+    );
+
+    console.log(
+        "WITH PAYROLL:",
+        payrollRecords.length
+    );
+
+    console.log(
+        "WITHOUT PAYROLL:",
+        employees.length - payrollRecords.length
+    );
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 </script>
+
+
+
+
+
+
 
 
 </body>
